@@ -49,7 +49,7 @@ env:
   # Must equal the platform's pin: the platform refuses requests validated with another
   # version and its admin check compares both.
   POLICY_BUNDLE: >-
-    ghcr.io/svenm3/platform-policy:2.0.0-rc.4@sha256:8b82dfca288e5899f37dce943416439d8293f24ea3c69862eacc6c9fc37b76ff
+    ghcr.io/svenm3/platform-policy:2.1.0-rc.8@sha256:7a02ac00fed30df6339eb3542dde719461a869b2a58aac2d2694abb6234abe92
   CONFTEST_IMAGE: >-
     openpolicyagent/conftest:v0.70.1@sha256:82f23e0e1f3faf2f3798f4b1974676c1aed96b05c6656ec6820435c31867c532
 

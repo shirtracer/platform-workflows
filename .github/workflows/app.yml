@@ -34,12 +34,12 @@ name: platform app
         type: string
         default: "."
     secrets:
-      # Repositories outside the shirtracer organization: `secrets: inherit` passes nothing across
-      # owners, so their caller passes all its repository secrets as one value
-      # (`PLATFORM_SECRETS: ${{ toJSON(secrets) }}`). Organization repositories use
-      # `secrets: inherit` and leave this empty.
+      # The caller's repository secrets as one value (`PLATFORM_SECRETS: ${{ toJSON(secrets) }}`):
+      # `secrets: inherit` passes nothing to a workflow of another owner, and app secret names
+      # differ per app. Environment secrets of the caller's `production` environment still reach
+      # the request jobs directly and take precedence (verified 2026-10-26).
       PLATFORM_SECRETS:
-        description: "personal-account repositories: toJSON(secrets) of the caller"
+        description: "toJSON(secrets) of the caller"
         required: false
 
 permissions: {}
@@ -241,8 +241,8 @@ jobs:
           if action == "deploy":
               names = json.loads(env.get("SECRET_NAMES") or "[]")
               available = json.loads(env.get("SECRETS_JSON") or "{}")
-              # Personal-account repositories pass their secrets bundled (PLATFORM_SECRETS);
-              # secrets that arrive directly (inherit, Environment) take precedence.
+              # Repository secrets arrive bundled (PLATFORM_SECRETS); secrets that arrive directly
+              # (the caller's Environment) take precedence.
               bundled = available.pop("PLATFORM_SECRETS", "") or ""
               if bundled:
                   try:
@@ -258,8 +258,8 @@ jobs:
                           available[name] = value
               missing = [n for n in names if not available.get(n)]
               if missing:
-                  fail("secrets missing (GitHub Environment or repository secrets; repositories outside "
-                       "the shirtracer organization pass PLATFORM_SECRETS): " + ", ".join(missing))
+                  fail("secrets missing (Environment production or repository secrets; the caller "
+                       "passes them as PLATFORM_SECRETS): " + ", ".join(missing))
               # Values from the secrets context are masked by GitHub; never print them here.
               body.update({"image": env["IMAGE"], "policy_version": env["POLICY_VERSION"],
                            "secrets": {n: available[n] for n in names}})

@@ -1,0 +1,307 @@
+---
+# Reusable app workflow of the shirtracer platform: validate the app with the pinned policy
+# bundle, build and push its image under an immutable tag, and send the deploy (or offboard)
+# request to the platform with the job's identity token and the app secrets named in
+# platform.yaml. Public so that repositories of any owner can call it; only repositories
+# registered on the platform deploy (the platform checks repository, owner, default branch and
+# that the request came from this workflow at an accepted ref). Third-party actions are pinned by
+# commit. Nothing secret lives here.
+name: platform app
+
+"on":
+  workflow_call:
+    inputs:
+      action:
+        description: deploy or offboard
+        type: string
+        default: deploy
+      confirm:
+        description: "offboard only: the app name"
+        type: string
+        default: ""
+      environment:
+        description: GitHub Environment whose secrets are sent
+        type: string
+        default: production
+      controller-url:
+        description: deploy API base URL (also the identity token's audience)
+        type: string
+        default: https://deploy.platform.shirtracer.gmbh
+      dockerfile:
+        type: string
+        default: Dockerfile
+      context:
+        type: string
+        default: "."
+
+permissions: {}
+
+env:
+  # The policy bundle every app is validated with: <registry path>:<version>@sha256:<digest>
+  # Must equal the platform's pin: the platform refuses requests validated with another
+  # version and its admin check compares both.
+  POLICY_BUNDLE: >-
+    ghcr.io/svenm3/platform-policy:2.0.0-rc.4@sha256:8b82dfca288e5899f37dce943416439d8293f24ea3c69862eacc6c9fc37b76ff
+  CONFTEST_IMAGE: >-
+    openpolicyagent/conftest:v0.70.1@sha256:82f23e0e1f3faf2f3798f4b1974676c1aed96b05c6656ec6820435c31867c532
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      app: ${{ steps.manifest.outputs.app }}
+      secret_names: ${{ steps.manifest.outputs.secret_names }}
+      policy_version: ${{ steps.bundle.outputs.version }}
+      deploy_branch: ${{ steps.branch.outputs.default }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Default branch
+        id: branch
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH" ]; then
+            echo "default=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "default=false" >>"$GITHUB_OUTPUT"
+          fi
+
+      - name: Policy bundle pin
+        id: bundle
+        run: |
+          pin='^ghcr\.io/[a-z0-9_.-]+/platform-policy:[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?@sha256:[0-9a-f]{64}$'
+          if ! printf '%s' "$POLICY_BUNDLE" | grep -Eq "$pin"; then
+            echo "::error::no policy bundle pinned in the platform workflow (POLICY_BUNDLE)"
+            exit 1
+          fi
+          version="${POLICY_BUNDLE#*:}"
+          echo "version=${version%@*}" >>"$GITHUB_OUTPUT"
+
+      # The bundle is public: no registry login.
+      - name: Pull the policy bundle
+        run: |
+          docker run --rm -v "$RUNNER_TEMP:/out" -w /out \
+            "$CONFTEST_IMAGE" pull "oci://$POLICY_BUNDLE" -p bundle
+
+      - name: Validate platform.yaml and deploy/compose.yaml
+        env:
+          POLICY_VERSION: ${{ steps.bundle.outputs.version }}
+        run: |
+          set +e
+          out="$(docker run --rm --network none -v "$PWD:/app:ro" -v "$RUNNER_TEMP/bundle:/bundle:ro" -w /app \
+            "$CONFTEST_IMAGE" test --combine --no-color -p /bundle/policy -d /bundle/policy/data \
+            platform.yaml deploy/compose.yaml 2>&1)"
+          rc=$?
+          set -e
+          printf '%s\n' "$out"
+          {
+            echo "### Policy ${POLICY_VERSION}"
+            echo ""
+            if [ "$rc" -eq 0 ]; then
+              echo "All rules pass."
+            else
+              echo '```'
+              printf '%s\n' "$out" | grep '^FAIL' || printf '%s\n' "$out"
+              echo '```'
+            fi
+          } >>"$GITHUB_STEP_SUMMARY"
+          exit "$rc"
+
+      - name: App name and secret names
+        id: manifest
+        run: |
+          doc="$(docker run --rm --network none -v "$PWD:/app:ro" -w /app "$CONFTEST_IMAGE" parse platform.yaml |
+            jq -c 'if type == "array" then map(select(. != null))[0] else . end')"
+          echo "app=$(printf '%s' "$doc" | jq -r '.name')" >>"$GITHUB_OUTPUT"
+          echo "secret_names=$(printf '%s' "$doc" | jq -c '.secrets // []')" >>"$GITHUB_OUTPUT"
+
+  build:
+    needs: validate
+    if: inputs.action == 'deploy'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.result.outputs.image }}
+    env:
+      PUSH: >-
+        ${{ needs.validate.outputs.deploy_branch == 'true'
+            && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Image name
+        id: name
+        run: |
+          repo="${GITHUB_REPOSITORY,,}"
+          echo "name=ghcr.io/$repo" >>"$GITHUB_OUTPUT"
+          echo "tag=ghcr.io/$repo:sha-$GITHUB_SHA" >>"$GITHUB_OUTPUT"
+
+      # Registry credentials only on the push path; pull-request builds run without them.
+      - name: Log in to GHCR
+        if: env.PUSH == 'true'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # An existing tag is never rebuilt or overwritten (immutable tags).
+      - name: Existing image
+        id: existing
+        if: env.PUSH == 'true'
+        env:
+          TAG: ${{ steps.name.outputs.tag }}
+        run: |
+          digest="$(docker buildx imagetools inspect "$TAG" --format '{{json .Manifest}}' 2>/dev/null |
+            jq -r '.digest' || true)"
+          if [ -n "$digest" ] && [ "$digest" != "null" ]; then
+            echo "digest=$digest" >>"$GITHUB_OUTPUT"
+            echo "Image $TAG exists ($digest); not rebuilt." >>"$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        if: steps.existing.outputs.digest == ''
+
+      - name: Build (and push on the default branch)
+        id: build
+        if: steps.existing.outputs.digest == ''
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          push: ${{ env.PUSH == 'true' }}
+          tags: ${{ steps.name.outputs.tag }}
+          # Links a new package to its repository when first published (access follows the repository).
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          provenance: false
+
+      - name: Result
+        id: result
+        if: env.PUSH == 'true'
+        env:
+          TAG: ${{ steps.name.outputs.tag }}
+          EXISTING: ${{ steps.existing.outputs.digest }}
+          BUILT: ${{ steps.build.outputs.digest }}
+        run: |
+          digest="${EXISTING:-$BUILT}"
+          [ -n "$digest" ] || { echo "::error::no image digest"; exit 1; }
+          echo "image=$TAG@$digest" >>"$GITHUB_OUTPUT"
+          echo "Image: \`$TAG@$digest\`" >>"$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: [validate, build]
+    if: >-
+      inputs.action == 'deploy' && needs.validate.outputs.deploy_branch == 'true'
+      && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Send the deploy request
+        env:
+          ACTION: deploy
+          CONTROLLER_URL: ${{ inputs.controller-url }}
+          APP: ${{ needs.validate.outputs.app }}
+          IMAGE: ${{ needs.build.outputs.image }}
+          POLICY_VERSION: ${{ needs.validate.outputs.policy_version }}
+          SECRET_NAMES: ${{ needs.validate.outputs.secret_names }}
+          SECRETS_JSON: ${{ toJSON(secrets) }}
+        run: &request |
+          # app-request: builds the request, sends it with the job's identity token and streams
+          # the answer. Tested by tests/test_app_request.py.
+          python3 - <<'PY'
+          import json, os, sys, urllib.error, urllib.request
+
+          def fail(message):
+              print("::error::" + message)
+              sys.exit(1)
+
+          env = os.environ
+          action, base = env["ACTION"], env["CONTROLLER_URL"].rstrip("/")
+          body = {"app": env["APP"], "commit": env["GITHUB_SHA"]}
+          if action == "deploy":
+              names = json.loads(env.get("SECRET_NAMES") or "[]")
+              available = json.loads(env.get("SECRETS_JSON") or "{}")
+              missing = [n for n in names if not available.get(n)]
+              if missing:
+                  fail("secrets missing (GitHub Environment or repository secrets): " + ", ".join(missing))
+              # Values from the secrets context are masked by GitHub; never print them here.
+              body.update({"image": env["IMAGE"], "policy_version": env["POLICY_VERSION"],
+                           "secrets": {n: available[n] for n in names}})
+          else:
+              body["confirm"] = env["CONFIRM"]
+
+          # The job's identity token for the platform's audience (needs id-token: write).
+          req = urllib.request.Request(env["ACTIONS_ID_TOKEN_REQUEST_URL"] + "&audience=" + base)
+          req.add_header("Authorization", "Bearer " + env["ACTIONS_ID_TOKEN_REQUEST_TOKEN"])
+          with urllib.request.urlopen(req, timeout=30) as resp:
+              token = json.load(resp)["value"]
+          print("::add-mask::" + token)
+
+          req = urllib.request.Request(base + "/v1/" + action, data=json.dumps(body).encode(), method="POST")
+          req.add_header("Content-Type", "application/json")
+          req.add_header("Authorization", "Bearer " + token)
+          result = None
+          try:
+              with urllib.request.urlopen(req, timeout=1800) as resp:
+                  for raw in resp:
+                      event = json.loads(raw)
+                      if event.get("event") == "result":
+                          result = event
+                      else:
+                          print(event.get("message", ""))
+          except urllib.error.HTTPError as err:
+              try:
+                  result = json.loads(err.read())
+              except ValueError:
+                  result = {"outcome": "refused", "reason": "HTTP %d" % err.code}
+          except (urllib.error.URLError, TimeoutError) as err:
+              fail("deploy API not reachable: %s" % getattr(err, "reason", err))
+          result = result or {"outcome": "failed", "reason": "no result from the deploy API"}
+          line = "%s %s: %s — %s" % (action, env["APP"], result.get("outcome"), result.get("reason", ""))
+          print(line)
+          with open(env.get("GITHUB_STEP_SUMMARY", os.devnull), "a") as summary:
+              summary.write("### %s\n\n%s\n" % (action.capitalize(), line))
+          if result.get("outcome") not in ("accepted", "succeeded"):
+              sys.exit(1)
+          PY
+
+  offboard:
+    needs: validate
+    if: >-
+      inputs.action == 'offboard' && github.event_name == 'workflow_dispatch'
+      && needs.validate.outputs.deploy_branch == 'true'
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Confirmation
+        env:
+          APP: ${{ needs.validate.outputs.app }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [ "$CONFIRM" != "$APP" ]; then
+            echo "::error::type the app name ($APP) as confirmation to offboard; nothing was sent"
+            exit 1
+          fi
+
+      - name: Send the offboard request
+        env:
+          ACTION: offboard
+          CONTROLLER_URL: ${{ inputs.controller-url }}
+          APP: ${{ needs.validate.outputs.app }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: *request

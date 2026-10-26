@@ -1,0 +1,45 @@
+---
+# Checks on every pull request and on main: the workflow lints, its pins have the required form,
+# its job conditions and request step behave as documented.
+name: ci
+
+"on":
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Workflow lint
+        run: >-
+          docker run --rm -v "$PWD:/repo" -w /repo
+          rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+          -color
+
+      # Every image the workflow runs and the policy bundle are pinned by digest.
+      - name: Pins
+        run: |
+          set -eu
+          bundle='^ghcr\.io/[a-z0-9_.-]+/platform-policy:[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?@sha256:[0-9a-f]{64}$'
+          conftest='^openpolicyagent/conftest:v[0-9.]+@sha256:[0-9a-f]{64}$'
+          python3 - "$bundle" "$conftest" <<'PY'
+          import re, sys, yaml
+          env = yaml.safe_load(open(".github/workflows/app.yml"))["env"]
+          assert re.match(sys.argv[1], env["POLICY_BUNDLE"].strip()), "POLICY_BUNDLE not pinned by digest"
+          assert re.match(sys.argv[2], env["CONFTEST_IMAGE"].strip()), "CONFTEST_IMAGE not pinned by digest"
+          PY
+          ! grep -nE 'uses: [^ ]+@(v[0-9]+|main|master)\b' .github/workflows/app.yml
+
+      - name: Tests
+        run: |
+          python3 -m pip install --quiet pytest==9.1.1 pyyaml==6.0.3
+          python3 -m pytest -q tests

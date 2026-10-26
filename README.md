@@ -17,11 +17,17 @@ jobs:
     with:
       action: ${{ inputs.action || 'deploy' }}
       confirm: ${{ inputs.confirm || '' }}
-    secrets: inherit
+    secrets:
+      PLATFORM_SECRETS: ${{ toJSON(secrets) }}
 ```
 
 The caller needs `permissions: contents: read, packages: write, id-token: write`. Pushes to the
 default branch deploy; pull requests and other branches only validate and build.
+
+Secrets are passed explicitly, not with `secrets: inherit`: inheriting passes nothing to a
+workflow of another owner (personal-account repositories), and app secret names differ per app.
+The workflow takes from `PLATFORM_SECRETS` only the names listed in `platform.yaml` and masks
+them in the log.
 
 | Input | Default | Meaning |
 |-------|---------|---------|
@@ -32,7 +38,9 @@ default branch deploy; pull requests and other branches only validate and build.
 | `dockerfile`, `context` | `Dockerfile`, `.` | the image build |
 
 App secrets: the names listed in `platform.yaml` → `secrets`, from the `production` Environment
-(recommended, restricted to `main`) or from repository secrets.
+(recommended, restricted to `main`; they reach the request jobs directly and take precedence) or
+from repository secrets (through `PLATFORM_SECRETS`). Both work for organization and
+personal-account repositories.
 
 ## Who can deploy
 

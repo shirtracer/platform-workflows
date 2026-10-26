@@ -91,6 +91,30 @@ def test_deploy_sends_only_named_secrets(fake, tmp_path):
     assert "accepted" in (tmp_path / "summary.md").read_text()
 
 
+def test_bundled_secrets_of_personal_repositories(fake, tmp_path):
+    bundle = json.dumps({"EXAMPLE_API_KEY": SECRET, "OTHER": "not-sent", "github_token": "gh"})
+    proc = run(fake, tmp_path, **deploy_env(SECRETS_JSON=json.dumps({"PLATFORM_SECRETS": bundle, "github_token": "gh"})))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    _, _, body = Fake.received[0]
+    assert body["secrets"] == {"EXAMPLE_API_KEY": SECRET}
+    # The value appears only in its mask command, which the runner hides.
+    assert [line for line in proc.stdout.splitlines() if SECRET in line] == ["::add-mask::" + SECRET]
+
+
+def test_direct_secrets_win_over_the_bundle(fake, tmp_path):
+    bundle = json.dumps({"EXAMPLE_API_KEY": "from-the-bundle"})
+    proc = run(fake, tmp_path, **deploy_env(SECRETS_JSON=json.dumps({"PLATFORM_SECRETS": bundle,
+                                                                       "EXAMPLE_API_KEY": SECRET})))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert Fake.received[0][2]["secrets"] == {"EXAMPLE_API_KEY": SECRET}
+
+
+def test_broken_bundle_is_refused_without_printing_it(fake, tmp_path):
+    proc = run(fake, tmp_path, **deploy_env(SECRETS_JSON=json.dumps({"PLATFORM_SECRETS": "not json " + SECRET})))
+    assert proc.returncode == 1 and Fake.received == []
+    assert SECRET not in proc.stdout + proc.stderr
+
+
 def test_missing_secret_is_named_and_nothing_sent(fake, tmp_path):
     proc = run(fake, tmp_path, **deploy_env(SECRETS_JSON=json.dumps({})))
     assert proc.returncode == 1

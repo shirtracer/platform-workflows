@@ -23,6 +23,17 @@ jobs:
 The caller needs `permissions: contents: read, packages: write, id-token: write`. Pushes to the
 default branch deploy; pull requests and other branches only validate and build.
 
+**Repositories outside the `shirtracer` organization** (personal accounts): `secrets: inherit`
+passes nothing to a workflow of another owner, so the caller passes its repository secrets as
+one value instead:
+
+```yaml
+    secrets:
+      PLATFORM_SECRETS: ${{ toJSON(secrets) }}
+```
+
+The workflow takes from it only the names listed in `platform.yaml` and masks them in the log.
+
 | Input | Default | Meaning |
 |-------|---------|---------|
 | `action` | `deploy` | `deploy`, or `offboard` (only by hand, with `confirm`) |
@@ -31,8 +42,10 @@ default branch deploy; pull requests and other branches only validate and build.
 | `controller-url` | `https://deploy.platform.shirtracer.gmbh` | the platform's deploy API |
 | `dockerfile`, `context` | `Dockerfile`, `.` | the image build |
 
-App secrets: the names listed in `platform.yaml` → `secrets`, from the `production` Environment
-(recommended, restricted to `main`) or from repository secrets.
+App secrets: the names listed in `platform.yaml` → `secrets`. Organization repositories: from
+the `production` Environment (recommended, restricted to `main`) or from repository secrets.
+Personal-account repositories: from repository secrets only (GitHub hands Environment secrets to
+a workflow of another owner only for names it declares in advance).
 
 ## Who can deploy
 

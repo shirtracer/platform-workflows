@@ -70,3 +70,4 @@ rule, its ID: look it up in [The contract](contract.md).
 
 - Replace the example app in `app/` and `Dockerfile` with yours; keep the lines marked `keep:`.
 - [Operations](operations.md): logs, metrics, rollback, calling other apps.
+- An existing repository instead of the template: [Bringing an existing repository](existing-repository.md).

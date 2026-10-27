@@ -4,7 +4,8 @@
 # request to the platform with the job's identity token and the app secrets named in
 # platform.yaml. Public so that repositories of any owner can call it; only repositories
 # registered on the platform deploy (the platform checks repository, owner, default branch and
-# that the request came from this workflow at an accepted ref). Third-party actions are pinned by
+# that the request came from this workflow at a released ref). Call it at @v1 (the moving major
+# tag) or at an exact release @v1.x.y, never at a branch. Third-party actions are pinned by
 # commit. Nothing secret lives here.
 name: platform app
 

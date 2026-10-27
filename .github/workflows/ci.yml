@@ -1,6 +1,6 @@
 ---
 # Checks on every pull request and on main: the workflow lints, its pins have the required form,
-# its job conditions and request step behave as documented.
+# its job conditions and request step behave as documented, the docs match the pinned bundle.
 name: ci
 
 "on":
@@ -38,6 +38,15 @@ jobs:
           assert re.match(sys.argv[2], env["CONFTEST_IMAGE"].strip()), "CONFTEST_IMAGE not pinned by digest"
           PY
           ! grep -nE 'uses: [^ ]+@(v[0-9]+|main|master)\b' .github/workflows/app.yml
+
+      # The docs test compares docs/contract.md with the rules of the pinned bundle (public).
+      - name: Pull the policy bundle
+        run: |
+          set -eu
+          read_env() { python3 -c "import sys, yaml; print(yaml.safe_load(open('.github/workflows/app.yml'))['env'][sys.argv[1]].strip())" "$1"; }
+          docker run --rm -v "$RUNNER_TEMP:/out" -w /out \
+            "$(read_env CONFTEST_IMAGE)" pull "oci://$(read_env POLICY_BUNDLE)" -p bundle
+          echo "POLICY_BUNDLE_DIR=$RUNNER_TEMP/bundle" >>"$GITHUB_ENV"
 
       - name: Tests
         run: |

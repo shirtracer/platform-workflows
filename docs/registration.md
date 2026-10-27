@@ -8,10 +8,11 @@ app.
 Send the platform admin:
 
 - the **app name** (rules: [Getting started](getting-started.md#2-choose-the-app-name));
-- the **repository** (`owner/name`) and that its default branch is `main`;
-- who should be **managers** of the app's groups (platform usernames), if any.
+- the **repository** (`owner/name`) and that its default branch is `main`.
 
-The admin checks the name, registers the repository with its owner and confirms. In your own
+The admin checks the name, registers the repository with its owner and confirms. Managers of your
+groups aren't part of the registration: set them yourself in `platform.yaml` →
+`access.managers`; they must be existing platform usernames. In your own
 account, do the [two one-time steps](repositories.md#your-own-account-the-two-one-time-steps)
 then. Organization repositories need nothing more. A push before the registration is refused
 with "app … is not registered"; push again afterwards.

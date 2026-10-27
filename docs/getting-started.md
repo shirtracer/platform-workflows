@@ -1,6 +1,6 @@
 # Getting started
 
-From nothing to your app at `https://<name>.apps.platform.shirtracer.gmbh` in about 20 minutes of
+From nothing to your app at `https://<name>.apps.platform.shirtracer.gmbh` in about 30 minutes of
 your own work, plus the admin's registration.
 
 ## 1. Create your repository
@@ -32,7 +32,14 @@ In `platform.yaml` (all fields: [The contract](contract.md#platformyaml)):
   usernames that manage the members of your own groups.
 - `services`: `postgres`, `redis`, `s3`; remove what you don't need
   ([Shared services](services.md)).
-- `secrets`: names of your own secrets (API keys and the like).
+- `secrets`: names of your own secrets (API keys and the like). Each name appears in three
+  places, all with the same spelling: `platform.yaml` → `secrets`, the service's `secrets:` list
+  in `deploy/compose.yaml`, and an entry `<NAME>: {file: ${APP_SECRETS}/<NAME>}` in its top-level
+  `secrets:`. Replace `EXAMPLE_API_KEY` in all three (or remove it everywhere); a name left in
+  only one place fails the check ([APP-C-SECRET-NAME](contract.md#secrets)). Your app reads
+  `/run/secrets/<NAME>`.
+- The same holds for the platform's credentials: remove `DATABASE_URL`, `REDIS_URL` or `S3_*`
+  from `deploy/compose.yaml` when you drop the service.
 
 ## 4. Add your secrets
 

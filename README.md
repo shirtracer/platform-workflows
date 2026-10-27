@@ -1,6 +1,7 @@
 # platform-workflows
 
-The reusable workflow apps on the shirtracer platform call to deploy. It validates the app's
+The reusable workflow apps on the shirtracer platform call to deploy, and the documentation for
+app teams: **[docs/](docs/README.md)**. It validates the app's
 `platform.yaml` and `deploy/compose.yaml` against the platform's policy bundle, builds and pushes
 the image to GHCR (`ghcr.io/<owner>/<repo>:sha-<commit>`), and sends the deploy or offboard
 request to the platform with the job's short-lived GitHub identity token. No credential for the
@@ -13,7 +14,7 @@ From the app template's `.github/workflows/deploy.yml`:
 ```yaml
 jobs:
   platform:
-    uses: shirtracer/platform-workflows/.github/workflows/app.yml@main
+    uses: shirtracer/platform-workflows/.github/workflows/app.yml@v1
     with:
       action: ${{ inputs.action || 'deploy' }}
       confirm: ${{ inputs.confirm || '' }}
@@ -50,7 +51,14 @@ request came from this workflow at an accepted ref. Apps in personal accounts in
 platform's GitHub App on the repository and grant the platform read access to their image
 package once; the first deploy says what is missing.
 
-## Refs
+## Versions
 
-`main` is the version apps use until the first release; releases get semver tags and a moving
-`v1`. Changes go through pull requests with review and passing `ci`.
+| Ref | Meaning |
+|-----|---------|
+| `@v1` | the latest `v1.x.y`; fixes and compatible changes reach your app without a change in your repository (recommended) |
+| `@v1.x.y` | one exact release; you move it yourself |
+| `@main` or any branch | refused by the platform |
+
+Releases follow semantic versioning: patch for fixes and pin updates, minor for new optional
+behaviour, a new major (`v2`) for anything an app has to change for. Release tags never change;
+only `v1` moves. How releases are made: [RELEASING.md](RELEASING.md).

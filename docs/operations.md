@@ -2,7 +2,8 @@
 
 ## Deploys
 
-A push to `main` deploys; pull requests and other branches only validate and build. The workflow
+A push to the default branch (`main` in the template) deploys; pull requests and other
+branches only validate and build. The workflow
 validates the contract, builds and pushes `ghcr.io/<owner>/<repo>:sha-<commit>` and sends the
 deploy request; its summary shows the result and, on a refusal, why.
 

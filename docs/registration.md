@@ -8,7 +8,8 @@ app.
 Send the platform admin:
 
 - the **app name** (rules: [Getting started](getting-started.md#2-choose-the-app-name));
-- the **repository** (`owner/name`) and that its default branch is `main`.
+- the **repository** (`owner/name`) and its default branch (`main` in the template;
+  [another branch](existing-repository.md#3-the-default-branch) works too).
 
 The admin checks the name, registers the repository with its owner and confirms. Managers of your
 groups aren't part of the registration: set them yourself in `platform.yaml` →

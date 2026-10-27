@@ -6,6 +6,7 @@ your repository and this documentation are all you work with.
 | Page | What it covers |
 |------|----------------|
 | [Getting started](getting-started.md) | from the template to your app at `https://<name>.apps.platform.shirtracer.gmbh` |
+| [Bringing an existing repository](existing-repository.md) | the platform's files, the common rewrites, another default branch |
 | [Where your repository lives](repositories.md) | the `shirtracer` organization or your own account (two one-time steps) |
 | [Registration](registration.md) | getting a repository registered, moving or retiring an app, whom to ask |
 | [The contract](contract.md) | every `platform.yaml` field and every rule your compose file must follow, with fixes |

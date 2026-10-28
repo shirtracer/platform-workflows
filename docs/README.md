@@ -9,7 +9,7 @@ your repository and this documentation are all you work with.
 | [Bringing an existing repository](existing-repository.md) | the platform's files, the common rewrites, another default branch |
 | [Prompts for an AI assistant](ai-prompts.md) | ready-made prompts for a new app from the template and for an existing repository |
 | [Where your repository lives](repositories.md) | the `shirtracer` organization or your own account (two one-time steps) |
-| [Registration](registration.md) | getting a repository registered, moving or retiring an app, whom to ask |
+| [Registration](registration.md) | registered owners, how app names are claimed, moving or retiring an app, whom to ask |
 | [The contract](contract.md) | every `platform.yaml` field and every rule your compose file must follow, with fixes |
 | [Shared services](services.md) | Postgres, Redis and Silo: what your app can do, limits, extensions |
 | [Secrets](secrets.md) | your own secrets, the platform's credential files, rotation |

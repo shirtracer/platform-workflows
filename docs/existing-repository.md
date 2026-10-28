@@ -69,22 +69,22 @@ headers. An app with its own login uses `oidc` (with the platform's OIDC client)
 
 ## 3. The default branch
 
-The platform deploys from the repository's **default branch**, whatever it's called; the
-registration records it. If yours isn't `main` (e.g. `master`):
+The platform deploys from the repository's **default branch**, whatever it's called (it reads
+it from GitHub on every deploy). If yours isn't `main` (e.g. `master`):
 
 - in `.github/workflows/deploy.yml`, change `push: branches: [main]` to your branch;
 - the `production` Environment's deployment branch is your branch
-  ([Secrets](secrets.md));
-- tell the admin the branch with the registration ([Registration](registration.md)).
+  ([Secrets](secrets.md)).
 
-Renaming the default branch later needs an updated registration first.
+Renaming the default branch later works the same way: change both places, then push to the new
+default branch.
 
 ## 4. Secrets, registration, push
 
-As for a new app: secrets in the `production` Environment ([Getting started](getting-started.md#4-add-your-secrets)),
-the registration ([Registration](registration.md)), in a personal account the
-[two one-time steps](repositories.md#your-own-account-the-two-one-time-steps), then push to the
-default branch.
+As for a new app: secrets in the `production` Environment
+([Getting started](getting-started.md#4-add-your-secrets)); in a personal account its
+registration and the [extra steps](repositories.md#your-own-account-the-extra-steps)
+([Registration](registration.md)); then push to the default branch.
 
 The policy runs in the workflow on pull requests too, without deploying: a pull request with
 the new files is a safe place to work through the violations before the first push to the

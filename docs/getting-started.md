@@ -1,7 +1,7 @@
 # Getting started
 
 From nothing to your app at `https://<name>.apps.platform.shirtracer.gmbh` in about 30 minutes of
-your own work, plus the admin's registration.
+your own work.
 
 ## 1. Create your repository
 
@@ -47,11 +47,11 @@ Repository → **Settings → Environments → New environment** `production` �
 and tags**: "Selected branches and tags", add `main`. Add one secret per name in `platform.yaml` →
 `secrets`. Repository secrets work too; [Secrets](secrets.md) explains the difference.
 
-## 5. Get the repository registered
+## 5. Registration
 
-Ask the platform admin ([Registration](registration.md)) with the app name and the repository.
-Until then a push is refused with "app … is not registered". In your own account, also do the two
-one-time steps in [Where your repository lives](repositories.md).
+In the organization `shirtracer`: nothing to do, your first push claims the app name. In your own
+account: ask the admin once to register your account and do the
+[extra steps](repositories.md#your-own-account-the-extra-steps) ([Registration](registration.md)).
 
 ## 6. Push to `main`
 

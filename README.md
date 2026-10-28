@@ -45,11 +45,11 @@ personal-account repositories.
 
 ## Who can deploy
 
-Anyone can call this workflow; only repositories registered on the platform deploy. The platform
-checks the token's repository and owner against its registry, the default branch, and that the
-request came from this workflow at an accepted ref. Apps in personal accounts install the
-platform's GitHub App on the repository and grant the platform read access to their image
-package once; the first deploy says what is missing.
+Anyone can call this workflow; only repositories of owners registered on the platform deploy. The
+platform checks the token's owner against its registry, binds each app name to the repository
+that first deployed it, checks the default branch, and that the request came from this workflow
+at an accepted ref. Personal accounts install the platform's GitHub App once and grant the
+platform read access to each image package; the first deploy says what is missing.
 
 ## Versions
 

@@ -3,7 +3,7 @@
 You don't need a new repository: an existing one deploys once it has the platform's files and
 the app fits the contract. Allow an hour or more, depending on how far the app is from the
 contract; the policy names every violation and its fix, so pushing and working through the list
-is fine.
+is fine. A coding assistant can do most of it: [Prompts for an AI assistant](ai-prompts.md#an-existing-repository).
 
 ## 1. Add the platform's files
 

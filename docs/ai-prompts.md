@@ -5,9 +5,9 @@ your repository. Replace the parts in `<angle brackets>` first. The assistant re
 from the links in the prompt; one without web access needs them pasted in.
 
 The assistant prepares the files. The steps outside the repository stay yours: the `production`
-Environment and its secrets ([Secrets](secrets.md)), the registration
-([Registration](registration.md)), and in your own account the
-[two one-time steps](repositories.md#your-own-account-the-two-one-time-steps). Never paste secret
+Environment and its secrets ([Secrets](secrets.md)), and in your own account its registration
+([Registration](registration.md)) and the
+[extra steps](repositories.md#your-own-account-the-extra-steps). Never paste secret
 values into the chat; the files only name them.
 
 ## A new app from the template

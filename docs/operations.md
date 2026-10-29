@@ -106,5 +106,5 @@ Patch and minor releases of the workflow reach you through `@v1` without any cha
 Removing the app is never triggered by a push. In GitHub: **Actions → deploy → Run workflow**,
 action `offboard`, and type the app name as confirmation. The platform then keeps a final
 database backup, keeps the buckets until the offsite copy has them, and removes the app, its
-route, credentials and access to the shared services. Then ask the admin to remove the
-registration ([Registration](registration.md)).
+route, credentials and access to the shared services. The name stays bound to your repository
+until the admin purges the kept data ([Registration](registration.md#retiring-an-app)).

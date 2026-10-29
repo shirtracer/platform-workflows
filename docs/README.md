@@ -13,7 +13,7 @@ your repository and this documentation are all you work with.
 | [The contract](contract.md) | every `platform.yaml` field and every rule your compose file must follow, with fixes |
 | [Shared services](services.md) | Postgres, Redis and Silo: what your app can do, limits, extensions; your database in pgAdmin |
 | [Secrets](secrets.md) | your own secrets, the platform's credential files, rotation |
-| [Operations](operations.md) | deploys, rollback, logs, metrics, calls between apps, offboarding, template updates |
+| [Operations](operations.md) | deploys, rollback, logs, metrics, calls between apps, access from outside Germany, offboarding, template updates |
 
 The template: [shirtracer/platform-app-template](https://github.com/shirtracer/platform-app-template).
 The workflow your app calls: [`.github/workflows/app.yml`](../.github/workflows/app.yml), at `@v1`.

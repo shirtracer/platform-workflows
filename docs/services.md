@@ -38,6 +38,36 @@ At most **50 connections** per app; size your connection pools across all replic
 Your database is backed up by the platform (daily, with point-in-time recovery); a restore is
 done by the admin on request.
 
+### Looking into your database (pgAdmin)
+
+Your team can open your app's database in the browser at
+[pgadmin.platform.shirtracer.gmbh](https://pgadmin.platform.shirtracer.gmbh), with your normal
+platform login (Authentik, with its second factor). Nobody gets a database password, and your
+app's credentials are never shown there.
+
+- **Who**: the app's managers (`access.managers` in `platform.yaml`) and the members of the
+  Authentik group `<name>-db`. The platform creates that group for every app with Postgres; your
+  managers add and remove people in it themselves (Authentik → Directory → Groups → `<name>-db`),
+  like your app's other groups. Being in your app's access groups alone does not give database
+  access.
+- **What you see**: after login, the group `<name>` with one entry `<name>`; connect without a
+  password. You see no other app's database and can't connect to one, even with a server you add
+  yourself.
+- **What you can do**: everything your app can, on your app's database only: read and change
+  data, create and alter tables, run SQL. **This is production data**: there is no undo apart
+  from a restore by the admin. Tables you create belong to your app, so your app can use them.
+- **Limits**: at most 5 connections for your whole team, a statement is cancelled after 5
+  minutes, and a transaction left open is ended after 10 minutes (so a forgotten pgAdmin tab
+  never blocks your app for long). These limits count separately from your app's 50 connections.
+- **Logging out and leaving**: sessions end after 8 hours. Someone removed from `<name>-db` can't
+  open a new connection from then on; the admin can also switch your team's database access off
+  and on again at once.
+- **From abroad**: like everything on the platform, pgAdmin answers only in Germany
+  ([Operations](operations.md#access-from-outside-germany)).
+
+pgAdmin keeps no data of its own besides your preferences; downloads and uploads in its file
+manager are gone after a restart.
+
 ## Redis
 
 ```yaml

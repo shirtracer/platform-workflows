@@ -11,7 +11,7 @@ your repository and this documentation are all you work with.
 | [Where your repository lives](repositories.md) | the `shirtracer` organization or your own account (two one-time steps) |
 | [Registration](registration.md) | registered owners, how app names are claimed, moving or retiring an app, whom to ask |
 | [The contract](contract.md) | every `platform.yaml` field and every rule your compose file must follow, with fixes |
-| [Shared services](services.md) | Postgres, Redis and Silo: what your app can do, limits, extensions |
+| [Shared services](services.md) | Postgres, Redis and Silo: what your app can do, limits, extensions; your database in pgAdmin |
 | [Secrets](secrets.md) | your own secrets, the platform's credential files, rotation |
 | [Operations](operations.md) | deploys, rollback, logs, metrics, calls between apps, offboarding, template updates |
 

@@ -103,7 +103,7 @@ more and the admin follows up. Buckets are copied offsite with the platform's ba
 
 | Limit | Value |
 |-------|-------|
-| CPU and memory per service | 2 CPUs, 2 GiB |
+| CPU and memory per service | 4 CPUs, 8 GiB (policy 2.2.0; 2 CPUs, 2 GiB before) |
 | CPU and memory per app (limits × replicas) | 4 CPUs, 8 GiB |
 | Postgres connections per app | 50 |
 | Buckets per app | 20 |

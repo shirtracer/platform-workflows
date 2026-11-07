@@ -64,7 +64,7 @@ app's credentials are never shown there.
   open a new connection from then on; the admin can also switch your team's database access off
   and on again at once.
 - **From abroad**: like everything on the platform, pgAdmin answers only in Germany
-  ([Operations](operations.md#access-from-outside-germany)).
+  ([Operations](operations.md)).
 
 pgAdmin keeps no data of its own besides your preferences; downloads and uploads in its file
 manager are gone after a restart.

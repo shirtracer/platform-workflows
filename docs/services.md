@@ -49,7 +49,8 @@ app's credentials are never shown there.
   Authentik group `<name>-db`. The platform creates that group for every app with Postgres; your
   managers add and remove people in it themselves (Authentik → Directory → Groups → `<name>-db`),
   like your app's other groups. Being in your app's access groups alone does not give database
-  access.
+  access. An app with `auth: none` has no managers on the platform: ask the platform admin to add
+  or remove people in `<name>-db`.
 - **What you see**: after login, the group `<name>` with one entry `<name>`; connect without a
   password. You see no other app's database and can't connect to one, even with a server you add
   yourself.

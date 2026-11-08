@@ -86,7 +86,7 @@ Removing a service revokes access and keeps the data.
 |------|-------|-----|
 | APP-C-IMAGE | no `image`, or a moving tag like `latest` | `${APP_IMAGE}`, or `<image>:<version>` / `<image>@sha256:<digest>` |
 | APP-C-LIMITS | a service without `deploy.resources.limits.cpus` and `.memory` | add both |
-| APP-C-QUOTA-SVC | a service above 2 CPUs or 2 GiB | lower the limits |
+| APP-C-QUOTA-SVC | a service above 4 CPUs or 8 GiB | lower the limits |
 | APP-C-QUOTA-APP | the app above 4 CPUs or 8 GiB in total (limits × replicas) | lower limits or replicas |
 | APP-C-HEALTH | a routed service without a working `healthcheck` | add a `healthcheck.test` (not `NONE`, not disabled) |
 

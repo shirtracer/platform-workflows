@@ -101,6 +101,33 @@ changes (the workflow's release notes say so), compare and take over what applie
 Patch and minor releases of the workflow reach you through `@v1` without any change. Pin
 `@v1.x.y` only if you need an exact version, and move it yourself.
 
+## Access from outside Germany
+
+The platform answers only requests from addresses in Germany. Anyone else gets `403` with a
+short page ("Zugriff nur aus Deutschland. / Access is only possible from Germany."), for every
+app, the login and Grafana. Deploys are not affected (GitHub's runners reach the platform), and
+neither are certificates.
+
+A foreign service that calls your app (a payment provider's webhook, GitHub, a mail service) needs
+its path opened in `platform.yaml`:
+
+```yaml
+abroad_paths: [/webhooks/stripe]
+```
+
+- Each path opens itself and everything below it (`/webhooks/stripe/events` too, not
+  `/webhooks/stripex`); at most 10; never `/`: an app can't be opened entirely.
+- Only for paths your app serves **without** the platform login (`auth: forward` sends visitors
+  to the login, which stays closed abroad). Check the caller yourself, e.g. the webhook's
+  signature.
+- The change takes effect within a minute of the deploy; removing a path closes it again.
+- Available with policy bundle 2.2.0 (platform release 1.1.0); older bundles refuse the field.
+
+A user in Germany who gets the 403 page: their provider's addresses may be listed abroad. Ask
+the platform admin with the user's public address and the time.
+
+Country data: [IP Geolocation by DB-IP](https://db-ip.com), CC BY 4.0.
+
 ## Offboarding
 
 Removing the app is never triggered by a push. In GitHub: **Actions → deploy → Run workflow**,
